@@ -1,0 +1,374 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String                  @id @default(uuid())
+  email              String                  @unique
+  passwordHash       String
+  name               String
+  role               String                  @default("USER")
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  profile            UserProfile?
+  savedJobs          SavedJob[]
+  applications       Application[]
+  countryPreferences UserCountryPreference[]
+  notifications      Notification[]
+  oauthCredentials   OAuthCredential[]
+}
+
+model UserProfile {
+  id                       String      @id @default(uuid())
+  userId                   String      @unique
+  user                     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone                    String?
+  education                String
+  degree                   String
+  department               String?
+  college                  String
+  graduationYear           Int
+  cgpaOrPercentage         String?
+  preferredJobCategories   Json        @default("[]")
+  preferredEmploymentTypes Json        @default("[]")
+  certifications           Json        @default("[]")
+  internships              Json        @default("[]")
+  projects                 Json        @default("[]")
+  workExperience           Json        @default("[]")
+  resumeUrl                String?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  skills                   UserSkill[]
+}
+
+model UserSkill {
+  id                String      @id @default(uuid())
+  userProfileId     String
+  userProfile       UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  name              String
+  category          String      @default("other")
+  proficiency       String      @default("intermediate")
+  yearsOfExperience Float       @default(0)
+  createdAt         DateTime    @default(now())
+
+  @@index([name])
+}
+
+model Country {
+  id              String                  @id @default(uuid())
+  code            String                  @unique
+  name            String                  @unique
+  isEnabled       Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  userPreferences UserCountryPreference[]
+  sourceCountries SourceCountry[]
+  jobs            Job[]
+
+  @@index([code])
+}
+
+model UserCountryPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, countryId])
+}
+
+model JobSource {
+  id                   String          @id @default(uuid())
+  name                 String          @unique
+  type                 String          // GREENHOUSE, LEVER, CAREER_PAGE, API
+  baseUrl              String
+  isEnabled            Boolean         @default(true)
+  scanFrequencyMinutes Int             @default(30)
+  rateLimitPerMinute   Int             @default(60)
+  lastSuccessfulScan   DateTime?
+  lastFailedScan       DateTime?
+  lastError            String?
+  totalJobsCollected   Int             @default(0)
+  healthStatus         String          @default("HEALTHY") // HEALTHY, DEGRADED, FAILING
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  sourceCountries      SourceCountry[]
+  jobs                 Job[]
+  scanLogs             ScanLog[]
+}
+
+model SourceCountry {
+  id        String    @id @default(uuid())
+  sourceId  String
+  source    JobSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  countryId String
+  country   Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([sourceId, countryId])
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  normalized  String   @unique
+  website     String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobs        Job[]
+}
+
+model Job {
+  id                   String             @id @default(uuid())
+  externalId           String
+  sourceId             String
+  source               JobSource          @relation(fields: [sourceId], references: [id])
+  companyId            String
+  company              Company            @relation(fields: [companyId], references: [id])
+  countryId            String?
+  country              Country?           @relation(fields: [countryId], references: [id])
+  
+  title                String
+  normalizedTitle      String
+  location             String             @default("Unspecified")
+  city                 String?
+  workplaceType        String             @default("Unknown") // Remote, Hybrid, Onsite, Unknown
+  employmentType       String             @default("Full-time")
+  jobCategory          String             @default("Software Engineering")
+  
+  description          String
+  responsibilities     Json               @default("[]")
+  experienceMin        Float?             @default(0)
+  experienceMax        Float?             @default(2)
+  mandatoryExperience  Float?
+  preferredExperience  Float?
+  salaryMin            Float?
+  salaryMax            Float?
+  currency             String?            @default("USD")
+  
+  eligibilityStatus    String             @default("NEEDS_REVIEW") // ELIGIBLE, INELIGIBLE, NEEDS_REVIEW
+  eligibilityReason    String?
+  
+  applicationUrl       String
+  sourceUrl            String
+  linkedinPostUrl      String?
+  canonicalUrl         String?
+  
+  postedAt             DateTime?
+  discoveredAt         DateTime           @default(now())
+  verifiedAt           DateTime?
+  expiresAt            DateTime?
+  status               String             @default("ACTIVE") // ACTIVE, EXPIRED, CLOSED, UNAVAILABLE, NEEDS_REVIEW
+  rawPayload           Json?
+  
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  analysis             JobAnalysis?
+  skills               JobSkill[]
+  savedJobs            SavedJob[]
+  applications         Application[]
+  statusHistory        JobStatusHistory[]
+  duplicatesAsOriginal JobDuplicate[]     @relation("OriginalJob")
+  duplicatesAsDup      JobDuplicate[]     @relation("DuplicateJob")
+
+  @@unique([sourceId, externalId])
+  @@index([postedAt])
+  @@index([discoveredAt])
+  @@index([countryId])
+  @@index([status])
+  @@index([employmentType])
+  @@index([eligibilityStatus])
+  @@index([canonicalUrl])
+}
+
+model JobAnalysis {
+  id                      String   @id @default(uuid())
+  jobId                   String   @unique
+  job                     Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  summary                 String
+  responsibilities        Json     @default("[]")
+  requiredSkills          Json     @default("[]")
+  preferredSkills         Json     @default("[]")
+  programmingLanguages    Json     @default("[]")
+  frameworks              Json     @default("[]")
+  databases               Json     @default("[]")
+  cloudPlatforms          Json     @default("[]")
+  tools                   Json     @default("[]")
+  educationRequirements   String?
+  experienceRequirements  String?
+  softSkills              Json     @default("[]")
+  certifications          Json     @default("[]")
+  importantRequirements   Json     @default("[]")
+  
+  // Profile match score & analysis
+  matchScore              Float    @default(0)
+  matchingSkills          Json     @default("[]")
+  missingSkills           Json     @default("[]")
+  relevantProjects        Json     @default("[]")
+  relevantInternships     Json     @default("[]")
+  educationCompatibility  String?
+  experienceCompatibility String?
+  locationCompatibility   String?
+  strengths               Json     @default("[]")
+  potentialGaps           Json     @default("[]")
+  aiRecommendation        String?
+  
+  aiProvider              String   @default("gemini")
+  aiModel                 String   @default("gemini-1.5-flash")
+  analyzedAt              DateTime @default(now())
+
+  @@index([matchScore])
+}
+
+model JobSkill {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  name        String
+  isMandatory Boolean  @default(true)
+  category    String   @default("other")
+  createdAt   DateTime @default(now())
+
+  @@index([name])
+}
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model Application {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId         String
+  job           Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status        String   @default("SAVED") // SAVED, APPLIED, INTERVIEW, SELECTED, REJECTED, WITHDRAWN
+  appliedAt     DateTime?
+  interviewDate DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, jobId])
+  @@index([status])
+}
+
+model NotificationBatch {
+  id             String         @id @default(uuid())
+  digestTime     DateTime       @default(now())
+  recipientEmail String
+  totalJobs      Int            @default(0)
+  status         String         @default("SENT") // PENDING, SENT, FAILED
+  error          String?
+  createdAt      DateTime       @default(now())
+
+  notifications  Notification[]
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchId   String?
+  batch     NotificationBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  type      String             @default("DAILY_DIGEST")
+  title     String
+  body      String
+  isRead    Boolean            @default(false)
+  sentAt    DateTime           @default(now())
+  createdAt DateTime           @default(now())
+}
+
+model ScanLog {
+  id             String    @id @default(uuid())
+  sourceId       String
+  source         JobSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  status         String    // SUCCESS, FAILED, RUNNING
+  jobsDiscovered Int       @default(0)
+  jobsEligible   Int       @default(0)
+  errorMessage   String?
+  durationMs     Int       @default(0)
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+}
+
+model AgentRun {
+  id             String    @id @default(uuid())
+  status         String    @default("COMPLETED") // RUNNING, COMPLETED, FAILED, PAUSED
+  trigger        String    @default("SCHEDULED") // SCHEDULED, MANUAL
+  jobsProcessed  Int       @default(0)
+  jobsEligible   Int       @default(0)
+  durationMs     Int       @default(0)
+  details        Json?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+}
+
+model JobStatusHistory {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  oldStatus String
+  newStatus String
+  reason    String?
+  changedAt DateTime @default(now())
+}
+
+model JobDuplicate {
+  id             String   @id @default(uuid())
+  originalJobId  String
+  originalJob    Job      @relation("OriginalJob", fields: [originalJobId], references: [id], onDelete: Cascade)
+  duplicateJobId String
+  duplicateJob   Job      @relation("DuplicateJob", fields: [duplicateJobId], references: [id], onDelete: Cascade)
+  confidence     Float    @default(1.0)
+  matchReason    String
+  createdAt      DateTime @default(now())
+
+  @@unique([originalJobId, duplicateJobId])
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  category  String   @default("GENERAL")
+  updatedAt DateTime @updatedAt
+}
+
+model OAuthCredential {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       String    @default("GOOGLE_GMAIL")
+  accountEmail   String
+  encryptedToken String
+  scope          String
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, provider])
+}
+

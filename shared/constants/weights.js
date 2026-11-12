@@ -1,0 +1,10 @@
+export const MATCH_WEIGHTS = {
+  TECHNICAL_SKILLS: 35,
+  EDUCATION_ELIGIBILITY: 20,
+  EXPERIENCE_ELIGIBILITY: 20,
+  ROLE_RELEVANCE: 15,
+  LOCATION_PREFERENCE: 10
+};
+
+export const TOTAL_WEIGHT = Object.values(MATCH_WEIGHTS).reduce((a, b) => a + b, 0); // 100
+

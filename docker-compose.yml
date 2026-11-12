@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: jobhunter-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: jobhunter
+      POSTGRES_PASSWORD: hunterpass
+      POSTGRES_DB: jobhunter_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobhunter -d jobhunter_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: jobhunter-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: jobhunter-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_URL=postgresql://jobhunter:hunterpass@postgres:5432/jobhunter_db?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=super-secret-jwt-key-replace-in-production-min-32-chars
+      - ENCRYPTION_KEY=12345678901234567890123456789012
+    command: npm start
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: jobhunter-worker
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://jobhunter:hunterpass@postgres:5432/jobhunter_db?schema=public
+      - REDIS_URL=redis://redis:6379
+    command: npm start
+
+volumes:
+  postgres_data:
+  redis_data:
+

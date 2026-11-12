@@ -1,0 +1,55 @@
+import { z } from 'zod';
+
+export const NormalizedJobSchema = z.object({
+  externalId: z.string().min(1),
+  sourceId: z.string().min(1),
+  jobTitle: z.string().min(1),
+  normalizedTitle: z.string().min(1),
+  companyName: z.string().min(1),
+  companyWebsite: z.string().url().optional().nullable(),
+  country: z.string().default('Unknown'),
+  countryCode: z.string().length(2).optional().nullable(),
+  city: z.string().optional().nullable(),
+  location: z.string().default('Remote / Unspecified'),
+  workplaceType: z.enum(['Remote', 'Hybrid', 'Onsite', 'Unknown']).default('Unknown'),
+  employmentType: z.string().default('Full-time'),
+  jobCategory: z.string().default('Software Engineering'),
+  description: z.string().min(1),
+  responsibilities: z.array(z.string()).default([]),
+  requiredSkills: z.array(z.string()).default([]),
+  preferredSkills: z.array(z.string()).default([]),
+  educationRequirements: z.string().optional().nullable(),
+  experienceMin: z.number().nonnegative().optional().nullable(),
+  experienceMax: z.number().nonnegative().optional().nullable(),
+  mandatoryExperience: z.number().nonnegative().optional().nullable(),
+  preferredExperience: z.number().nonnegative().optional().nullable(),
+  salaryMin: z.number().optional().nullable(),
+  salaryMax: z.number().optional().nullable(),
+  currency: z.string().optional().nullable(),
+  postedAt: z.coerce.date().optional().nullable(),
+  discoveredAt: z.coerce.date().default(() => new Date()),
+  applicationUrl: z.string().url(),
+  sourceUrl: z.string().url(),
+  linkedinPostUrl: z.string().url().optional().nullable(),
+  canonicalUrl: z.string().url().optional().nullable(),
+  eligibilityStatus: z.enum(['ELIGIBLE', 'INELIGIBLE', 'NEEDS_REVIEW']).default('NEEDS_REVIEW'),
+  eligibilityReason: z.string().optional().nullable(),
+  rawPayload: z.any().optional()
+});
+
+export const JobFilterSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  search: z.string().optional(),
+  country: z.string().optional(),
+  jobCategory: z.string().optional(),
+  employmentType: z.string().optional(),
+  workplaceType: z.string().optional(),
+  experienceMax: z.coerce.number().optional(),
+  minMatchScore: z.coerce.number().min(0).max(100).optional(),
+  eligibilityStatus: z.enum(['ELIGIBLE', 'INELIGIBLE', 'NEEDS_REVIEW']).optional(),
+  status: z.enum(['ACTIVE', 'EXPIRED', 'CLOSED', 'UNAVAILABLE', 'NEEDS_REVIEW']).optional(),
+  sortBy: z.enum(['postedAt', 'discoveredAt', 'matchScore', 'title', 'company']).default('discoveredAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc')
+});
+
