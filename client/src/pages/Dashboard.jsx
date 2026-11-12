@@ -19,7 +19,10 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 
-const STARTUP_COMPANIES = new Set(['paytm', 'cred', 'meesho', 'groww', 'zeta']);
+const STARTUP_COMPANIES = new Set([
+  'paytm', 'cred', 'meesho', 'groww', 'zeta',
+  'zoho corporation', 'freshworks', 'chargebee', 'kissflow', 'kovai.co', 'soliton technologies', 'gofrugal', 'contus'
+]);
 
 /**
  * Calculates human-readable deadline information and urgency status.
@@ -221,10 +224,35 @@ export default function Dashboard() {
           if (maxExp > 2) return false;
         }
 
-        // City filter with smart regional matching across India
+        // City & State filter with smart regional matching across India & Tamil Nadu
         if (cityFilter) {
           const jobCity = (job.city || job.location || '').toLowerCase();
-          if (cityFilter === 'noida_delhi') {
+          const jobLoc = (job.location || '').toLowerCase();
+          const jobState = (job.state || '').toLowerCase();
+
+          if (cityFilter === 'tamilnadu_all') {
+            if (
+              !jobLoc.includes('tamil nadu') &&
+              !jobState.includes('tamil nadu') &&
+              !jobCity.includes('chennai') &&
+              !jobCity.includes('coimbatore') &&
+              !jobCity.includes('madurai') &&
+              !jobCity.includes('trichy') &&
+              !jobCity.includes('salem') &&
+              !jobCity.includes('tenkasi') &&
+              !jobCity.includes('tirunelveli')
+            ) {
+              return false;
+            }
+          } else if (cityFilter === 'chennai') {
+            if (!jobCity.includes('chennai') && !jobLoc.includes('chennai')) return false;
+          } else if (cityFilter === 'coimbatore') {
+            if (!jobCity.includes('coimbatore') && !jobLoc.includes('coimbatore')) return false;
+          } else if (cityFilter === 'madurai') {
+            if (!jobCity.includes('madurai') && !jobLoc.includes('madurai')) return false;
+          } else if (cityFilter === 'trichy_salem') {
+            if (!jobCity.includes('trichy') && !jobLoc.includes('trichy') && !jobCity.includes('salem') && !jobLoc.includes('salem')) return false;
+          } else if (cityFilter === 'noida_delhi') {
             if (
               !jobCity.includes('noida') &&
               !jobCity.includes('delhi') &&
@@ -337,7 +365,7 @@ export default function Dashboard() {
             Fresher & Entry-Level Jobs Across India
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Verified opportunities for 0–2 years experience at top Indian startups (Paytm, CRED, Meesho, Groww, Zeta) and global tech MNCs across Bengaluru, Delhi NCR, Mumbai, Hyderabad & Remote.
+            Verified opportunities for 0–2 years experience across Tamil Nadu tech hubs (Chennai, Coimbatore, Madurai, Trichy, Salem with 7,500+ IT firms), Indian SaaS giants (Zoho, Freshworks, Kovai.co) & global tech MNCs.
           </p>
         </div>
 
@@ -482,14 +510,30 @@ export default function Dashboard() {
               className="p-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">All Indian Cities</option>
+              <option value="tamilnadu_all">🌴 All Tamil Nadu Hubs (7,000+ Cos)</option>
+              <option value="chennai">Chennai (OMR, Siruseri, Tidel)</option>
+              <option value="coimbatore">Coimbatore (Saravanampatti, Tidel)</option>
+              <option value="madurai">Madurai (Vadapalanji SEZ)</option>
+              <option value="trichy_salem">Trichy & Salem (Navalpattu, Steel Plant)</option>
               <option value="bengaluru">Bengaluru (Karnataka)</option>
               <option value="noida_delhi">Delhi NCR / Noida / Gurugram</option>
               <option value="mumbai">Mumbai (Maharashtra)</option>
               <option value="pune">Pune (Maharashtra)</option>
               <option value="hyderabad">Hyderabad (Telangana)</option>
-              <option value="chennai">Chennai (Tamil Nadu)</option>
               <option value="remote">Remote (Pan-India)</option>
             </select>
+
+            {/* Tamil Nadu Quick Filter Toggle */}
+            <button
+              onClick={() => setCityFilter(cityFilter === 'tamilnadu_all' ? '' : 'tamilnadu_all')}
+              className={`px-3 py-2 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                cityFilter === 'tamilnadu_all'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+              }`}
+            >
+              🌴 Tamil Nadu (7,500+ Cos)
+            </button>
 
             {/* Company Type (Startups vs MNCs) */}
             <select
@@ -598,6 +642,14 @@ export default function Dashboard() {
               const score = Math.round(job.analysis?.matchScore || job.matchScore || 80);
               const deadline = getDeadlineInfo(job.expiresAt || job.applicationDeadline || job.closingDate);
               const isStartup = STARTUP_COMPANIES.has((job.companyName || '').toLowerCase());
+              const isTamilNadu =
+                (job.state || '').toLowerCase().includes('tamil nadu') ||
+                (job.location || '').toLowerCase().includes('tamil nadu') ||
+                (job.city || '').toLowerCase().includes('chennai') ||
+                (job.city || '').toLowerCase().includes('coimbatore') ||
+                (job.city || '').toLowerCase().includes('madurai') ||
+                (job.city || '').toLowerCase().includes('trichy') ||
+                (job.city || '').toLowerCase().includes('salem');
 
               return (
                 <div
@@ -612,6 +664,12 @@ export default function Dashboard() {
                         <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
                           {job.jobCategory || 'Software Engineering'}
                         </span>
+
+                        {isTamilNadu && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            🌴 Tamil Nadu Hub
+                          </span>
+                        )}
 
                         {isStartup ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">

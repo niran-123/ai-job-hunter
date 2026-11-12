@@ -5,6 +5,7 @@ import { jobNormalizer } from '../normalization/jobNormalizer.js';
 import { eligibilityEngine } from '../eligibility/eligibilityEngine.js';
 import { profileMatcher } from '../matching/profileMatcher.js';
 import { duplicateDetector } from '../duplicates/duplicateDetector.js';
+import { tamilNaduCollector } from '../tamilNadu/tamilNaduCollector.js';
 
 export const agentController = {
   getStatus: (req, res) => {
@@ -68,11 +69,12 @@ export const agentController = {
         const ghBoards = ['stripe', 'canonical', 'inmobi', 'elastic', 'groww'];
         const leverSites = ['cred', 'zeta', 'meesho', 'paytm'];
 
-        const [ghResults, leverResults] = await Promise.all([
+        const [ghResults, leverResults, tnResults] = await Promise.all([
           Promise.all(ghBoards.map(boardToken => greenhouse.fetchJobs({ boardToken }))),
-          Promise.all(leverSites.map(site => lever.fetchJobs({ site })))
+          Promise.all(leverSites.map(site => lever.fetchJobs({ site }))),
+          tamilNaduCollector.scanTamilNaduOpportunities().catch(() => [])
         ]);
-        const allCandidates = [...ghResults.flat(), ...leverResults.flat()];
+        const allCandidates = [...ghResults.flat(), ...leverResults.flat(), ...tnResults.flat()];
         
         for (const candidate of allCandidates) {
           const sourceId = candidate.sourceType === 'GREENHOUSE' ? 'src_1' : 'src_2';

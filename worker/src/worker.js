@@ -9,6 +9,7 @@ import { profileMatcher } from '../../server/src/modules/matching/profileMatcher
 import { duplicateDetector } from '../../server/src/modules/duplicates/duplicateDetector.js';
 import { jobVerifier } from '../../server/src/modules/verification/jobVerifier.js';
 import { gmailDigestService } from '../../server/src/modules/notifications/gmailDigestService.js';
+import { tamilNaduCollector } from '../../server/src/modules/tamilNadu/tamilNaduCollector.js';
 import { store } from '../../server/src/services/store.js';
 
 const logger = pino({ name: 'JobHunterWorker' });
@@ -110,12 +111,13 @@ export class AutomatedWorker {
     const ghBoards = ['stripe', 'canonical', 'inmobi', 'elastic', 'groww'];
     const leverSites = ['cred', 'zeta', 'meesho', 'paytm'];
 
-    const [ghResults, leverResults] = await Promise.all([
+    const [ghResults, leverResults, tnResults] = await Promise.all([
       Promise.all(ghBoards.map(boardToken => greenhouse.fetchJobs({ boardToken }))),
-      Promise.all(leverSites.map(site => lever.fetchJobs({ site })))
+      Promise.all(leverSites.map(site => lever.fetchJobs({ site }))),
+      tamilNaduCollector.scanTamilNaduOpportunities().catch(() => [])
     ]);
 
-    const rawList = [...ghResults.flat(), ...leverResults.flat()];
+    const rawList = [...ghResults.flat(), ...leverResults.flat(), ...tnResults.flat()];
 
     let newCount = 0;
     for (const raw of rawList) {

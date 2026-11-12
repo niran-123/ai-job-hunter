@@ -14,6 +14,7 @@ import settingsRoutes from './modules/settings/settingsRoutes.js';
 import sourceRoutes from './modules/sources/sourceRoutes.js';
 import notificationRoutes from './modules/notifications/notificationRoutes.js';
 import agentRoutes from './modules/agent/agentRoutes.js';
+import tamilNaduRoutes from './modules/tamilNadu/tamilNaduRoutes.js';
 
 export const app = express();
 
@@ -64,6 +65,7 @@ apiRouter.use('/settings', settingsRoutes);
 apiRouter.use('/sources', sourceRoutes);
 apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/agent', agentRoutes);
+apiRouter.use('/tamil-nadu', tamilNaduRoutes);
 
 app.use('/api/v1', apiRouter);
 
