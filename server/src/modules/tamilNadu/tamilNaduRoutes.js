@@ -67,3 +67,4 @@ router.post('/scan', async (req, res) => {
 });
 
 export default router;
+
