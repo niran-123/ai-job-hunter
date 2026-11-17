@@ -1,5 +1,6 @@
 import { INITIAL_COUNTRIES, INITIAL_SOURCES } from '../../../shared/constants/sources.js';
 import { DEFAULT_IT_ROLES } from '../../../shared/constants/roles.js';
+import { tamilNaduCollector } from '../modules/tamilNadu/tamilNaduCollector.js';
 
 class InMemoryStore {
   constructor() {
@@ -1432,7 +1433,8 @@ class InMemoryStore {
       }
     ];
 
-    this.jobs = sampleJobs;
+    const registryTNJobs = tamilNaduCollector.getRegistryFresherOpportunities();
+    this.jobs = [...sampleJobs, ...registryTNJobs];
     this.updateCountryJobCounts();
   }
 

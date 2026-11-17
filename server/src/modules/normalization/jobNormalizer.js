@@ -36,7 +36,7 @@ export class JobNormalizer {
       countryCode,
       city,
       location: locationRaw,
-      workplaceType: rawJob.workplaceType || workplaceType,
+      workplaceType: this.normalizeWorkplaceType(rawJob.workplaceType || workplaceType),
       employmentType,
       jobCategory,
       description,
@@ -82,6 +82,15 @@ export class JobNormalizer {
       .trim();
   }
 
+  normalizeWorkplaceType(type) {
+    if (!type) return 'Onsite';
+    const lower = String(type).toLowerCase().trim();
+    if (lower.includes('remote') || lower.includes('home') || lower.includes('anywhere')) return 'Remote';
+    if (lower.includes('hybrid')) return 'Hybrid';
+    if (lower.includes('onsite') || lower.includes('on-site') || lower.includes('office')) return 'Onsite';
+    return 'Onsite';
+  }
+
   parseLocation(locationStr, title = '', description = '') {
     const loc = locationStr.toLowerCase();
     const combined = `${title} ${loc} ${description}`.toLowerCase();
@@ -97,14 +106,48 @@ export class JobNormalizer {
     let countryCode = null;
     let city = null;
 
-    if (loc.includes('india') || loc.includes('bangalore') || loc.includes('bengaluru') || loc.includes('hyderabad') || loc.includes('pune') || loc.includes('noida') || loc.includes('delhi') || loc.includes('chennai') || loc.includes('mumbai') || loc.includes('gurgaon')) {
+    const isIndia = loc.includes('india') ||
+      loc.includes('bangalore') || loc.includes('bengaluru') ||
+      loc.includes('hyderabad') || loc.includes('pune') || loc.includes('mumbai') ||
+      loc.includes('noida') || loc.includes('delhi') || loc.includes('gurgaon') || loc.includes('gurugram') ||
+      loc.includes('tamil nadu') || loc.includes('chennai') || loc.includes('coimbatore') ||
+      loc.includes('madurai') || loc.includes('trichy') || loc.includes('tiruchirappalli') ||
+      loc.includes('salem') || loc.includes('tirunelveli') || loc.includes('tenkasi') ||
+      loc.includes('erode') || loc.includes('vellore') || loc.includes('hosur') ||
+      loc.includes('thanjavur') || loc.includes('dindigul') || loc.includes('karur') ||
+      loc.includes('tiruppur') || loc.includes('kanchipuram') || loc.includes('chengalpattu') ||
+      loc.includes('ahmedabad') || loc.includes('kolkata') || loc.includes('kochi') || loc.includes('trivandrum');
+
+    if (isIndia) {
       country = 'India';
       countryCode = 'IN';
-      if (loc.includes('bangalore') || loc.includes('bengaluru')) city = 'Bengaluru';
+
+      // Tamil Nadu cities
+      if (loc.includes('chennai')) city = 'Chennai';
+      else if (loc.includes('coimbatore')) city = 'Coimbatore';
+      else if (loc.includes('madurai')) city = 'Madurai';
+      else if (loc.includes('trichy') || loc.includes('tiruchirappalli')) city = 'Trichy';
+      else if (loc.includes('salem')) city = 'Salem';
+      else if (loc.includes('tirunelveli')) city = 'Tirunelveli';
+      else if (loc.includes('tenkasi')) city = 'Tenkasi';
+      else if (loc.includes('erode')) city = 'Erode';
+      else if (loc.includes('vellore')) city = 'Vellore';
+      else if (loc.includes('hosur')) city = 'Hosur';
+      else if (loc.includes('thanjavur')) city = 'Thanjavur';
+      else if (loc.includes('dindigul')) city = 'Dindigul';
+      else if (loc.includes('karur')) city = 'Karur';
+      else if (loc.includes('tiruppur')) city = 'Tiruppur';
+      else if (loc.includes('kanchipuram') || loc.includes('chengalpattu') || loc.includes('siruseri')) city = 'Chennai';
+      // Other major Indian tech cities
+      else if (loc.includes('bangalore') || loc.includes('bengaluru')) city = 'Bengaluru';
       else if (loc.includes('hyderabad')) city = 'Hyderabad';
       else if (loc.includes('pune')) city = 'Pune';
       else if (loc.includes('mumbai')) city = 'Mumbai';
-      else if (loc.includes('delhi') || loc.includes('noida') || loc.includes('gurgaon')) city = 'Delhi NCR';
+      else if (loc.includes('delhi') || loc.includes('noida') || loc.includes('gurgaon') || loc.includes('gurugram')) city = 'Delhi NCR';
+      else if (loc.includes('kochi') || loc.includes('trivandrum')) city = 'Kerala';
+      else if (loc.includes('ahmedabad')) city = 'Ahmedabad';
+      else if (loc.includes('kolkata')) city = 'Kolkata';
+      else if (loc.includes('tamil nadu')) city = 'Chennai';
     } else if (loc.includes('canada') || loc.includes('toronto') || loc.includes('vancouver') || loc.includes('montreal') || loc.includes('ottawa')) {
       country = 'Canada';
       countryCode = 'CA';

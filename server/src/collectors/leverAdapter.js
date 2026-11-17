@@ -61,7 +61,11 @@ export class LeverAdapter extends BaseSourceAdapter {
       companyName: post.categories?.team ? `${site}` : site,
       jobTitle: post.text || 'Untitled Role',
       location: post.categories?.location || 'Remote / Unspecified',
-      workplaceType: post.workplaceType || (post.categories?.location?.toLowerCase().includes('remote') ? 'Remote' : 'Onsite'),
+      workplaceType: (post.workplaceType && String(post.workplaceType).toLowerCase().includes('remote')) || post.categories?.location?.toLowerCase().includes('remote')
+        ? 'Remote'
+        : (post.workplaceType && String(post.workplaceType).toLowerCase().includes('hybrid'))
+        ? 'Hybrid'
+        : 'Onsite',
       employmentType: post.categories?.commitment || 'Full-time',
       applicationUrl: post.applyUrl || post.hostedUrl,
       sourceUrl: post.hostedUrl,

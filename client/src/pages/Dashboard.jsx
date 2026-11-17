@@ -130,7 +130,7 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const [jobsRes, agentRes, savedRes] = await Promise.all([
-        api.get('/jobs?country=India&eligibilityStatus=ELIGIBLE&status=ACTIVE&limit=100').catch(err => {
+        api.get('/jobs?country=India&eligibilityStatus=ELIGIBLE&status=ACTIVE&limit=1000').catch(err => {
           console.warn('Jobs fetch error, check if server is running on port 5000', err);
           return { data: { data: { jobs: [] } } };
         }),
@@ -331,6 +331,11 @@ export default function Dashboard() {
     return exp > now && exp <= now + 5 * 24 * 60 * 60 * 1000;
   }).length;
   const highMatchCount = availableIndiaJobs.filter(j => (j.analysis?.matchScore || 0) >= 80).length;
+  const tamilNaduCount = availableIndiaJobs.filter(j =>
+    (j.state || '').toLowerCase().includes('tamil nadu') ||
+    (j.location || '').toLowerCase().includes('tamil nadu') ||
+    ['chennai', 'coimbatore', 'madurai', 'trichy', 'salem', 'tenkasi', 'tirunelveli', 'erode', 'vellore'].includes((j.city || '').toLowerCase())
+  ).length;
   const savedCount = savedJobIds.size;
 
   if (loading) {
@@ -464,6 +469,73 @@ export default function Dashboard() {
             View saved list <ChevronRight className="w-3 h-3" />
           </span>
         </Link>
+      </div>
+
+      {/* Tamil Nadu IT Ecosystem Spotlight Banner */}
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white rounded-2xl p-5 shadow-sm border border-emerald-800/40 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              🌴 Tamil Nadu Tech Ecosystem
+            </span>
+            <span className="text-xs text-emerald-300/80 font-medium">
+              7,525 Registered IT Companies &bull; Chennai &bull; Coimbatore &bull; Madurai &bull; Trichy &bull; Salem
+            </span>
+          </div>
+          <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+            Tamil Nadu IT Jobs Monitor
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+              {tamilNaduCount} Openings Active
+            </span>
+          </h2>
+          <p className="text-xs text-emerald-100/80 max-w-2xl leading-relaxed">
+            Actively scanning SaaS giants (Zoho, Freshworks, Chargebee, Kissflow, Kovai.co), enterprise MNC tech centers (Cognizant, PayPal, Ford, RNTBCI), and district tech parks across all 38 districts for 0–2 years freshers.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={() => setCityFilter(cityFilter === 'tamilnadu_all' ? '' : 'tamilnadu_all')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              cityFilter === 'tamilnadu_all'
+                ? 'bg-white text-emerald-900 shadow-md ring-2 ring-emerald-300'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs'
+            }`}
+          >
+            {cityFilter === 'tamilnadu_all' ? '✓ Showing All TN Hubs' : '🌴 Filter Tamil Nadu Only'}
+          </button>
+          <button
+            onClick={() => setCityFilter(cityFilter === 'chennai' ? '' : 'chennai')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
+              cityFilter === 'chennai'
+                ? 'bg-white text-emerald-900 shadow-sm'
+                : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50'
+            }`}
+          >
+            Chennai
+          </button>
+          <button
+            onClick={() => setCityFilter(cityFilter === 'coimbatore' ? '' : 'coimbatore')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
+              cityFilter === 'coimbatore'
+                ? 'bg-white text-emerald-900 shadow-sm'
+                : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50'
+            }`}
+          >
+            Coimbatore
+          </button>
+          <button
+            onClick={() => setCityFilter(cityFilter === 'madurai' ? '' : 'madurai')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
+              cityFilter === 'madurai'
+                ? 'bg-white text-emerald-900 shadow-sm'
+                : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/50'
+            }`}
+          >
+            Madurai
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
