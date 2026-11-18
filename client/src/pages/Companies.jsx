@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -15,7 +14,7 @@ import {
   Sparkles,
   ArrowRight
 } from 'lucide-react';
-import { api } from '../services/api';
+import api from '../services/api';
 
 const DISTRICT_CHIPS = [
   'All Districts',
@@ -45,33 +44,31 @@ export default function Companies() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [companies, setCompanies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState('');
 
-  // Fetch Tamil Nadu Ecosystem Statistics
-  const { data: statsData } = useQuery({
-    queryKey: ['tn-stats'],
-    queryFn: async () => {
-      const res = await api.get('/tamil-nadu/stats');
-      return res.data?.data || null;
-    }
-  });
-
-  // Fetch Monitored Companies Directory
-  const { data: directoryData, isLoading, refetch } = useQuery({
-    queryKey: ['tn-directory', selectedDistrict, selectedCategory, searchTerm],
-    queryFn: async () => {
+  const fetchDirectory = async () => {
+    setIsLoading(true);
+    try {
       const params = {};
       if (selectedDistrict !== 'All Districts') params.city = selectedDistrict;
       if (selectedCategory !== 'All Categories') params.category = selectedCategory;
       if (searchTerm) params.search = searchTerm;
 
       const res = await api.get('/tamil-nadu/directory', { params });
-      return res.data?.data || [];
+      setCompanies(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load companies directory', err);
+    } finally {
+      setIsLoading(false);
     }
-  });
+  };
 
-  const companies = directoryData || [];
+  useEffect(() => {
+    fetchDirectory();
+  }, [selectedDistrict, selectedCategory, searchTerm]);
 
   const handleTriggerScan = async () => {
     setIsScanning(true);
@@ -80,7 +77,7 @@ export default function Companies() {
       const res = await api.post('/tamil-nadu/scan');
       setScanMessage(res.data?.message || 'Scan completed successfully!');
       setTimeout(() => setScanMessage(''), 4500);
-      refetch();
+      fetchDirectory();
     } catch (err) {
       setScanMessage('Scan initiated in background.');
       setTimeout(() => setScanMessage(''), 3000);

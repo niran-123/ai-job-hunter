@@ -119,6 +119,7 @@ export default function Dashboard() {
   const [experienceFilter, setExperienceFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [companyTypeFilter, setCompanyTypeFilter] = useState('');
+  const [cloudDevOpsOnly, setCloudDevOpsOnly] = useState(false);
   const [onlyClosingSoon, setOnlyClosingSoon] = useState(false);
   const [sortBy, setSortBy] = useState('closingSoon');
 
@@ -280,6 +281,30 @@ export default function Dashboard() {
           if (STARTUP_COMPANIES.has(comp)) return false;
         }
 
+        // Cloud & DevOps priority filter
+        if (cloudDevOpsOnly) {
+          const title = (job.title || job.jobTitle || '').toLowerCase();
+          const cat = (job.jobCategory || '').toLowerCase();
+          const skills = (job.requiredSkills || []).map(s => s.toLowerCase());
+          const isCloud = job.isCloudDevOps ||
+            cat.includes('cloud') ||
+            cat.includes('devops') ||
+            cat.includes('sre') ||
+            title.includes('cloud') ||
+            title.includes('devops') ||
+            title.includes('sre') ||
+            title.includes('platform') ||
+            title.includes('aws') ||
+            title.includes('azure') ||
+            title.includes('gcp') ||
+            title.includes('kubernetes') ||
+            title.includes('docker') ||
+            title.includes('linux') ||
+            title.includes('infrastructure') ||
+            skills.some(s => ['aws', 'azure', 'gcp', 'devops', 'docker', 'kubernetes', 'terraform', 'linux', 'ci/cd'].includes(s));
+          if (!isCloud) return false;
+        }
+
         // Only closing soon (< 5 days)
         if (onlyClosingSoon) {
           const expMs = new Date(job.expiresAt || job.applicationDeadline || 0).getTime();
@@ -315,7 +340,7 @@ export default function Dashboard() {
         }
         return 0;
       });
-  }, [jobs, search, experienceFilter, cityFilter, companyTypeFilter, onlyClosingSoon, sortBy]);
+  }, [jobs, search, experienceFilter, cityFilter, companyTypeFilter, cloudDevOpsOnly, onlyClosingSoon, sortBy]);
 
   // Derived metrics for summary cards (based strictly on available non-expired jobs)
   const now = Date.now();
@@ -336,6 +361,28 @@ export default function Dashboard() {
     (j.location || '').toLowerCase().includes('tamil nadu') ||
     ['chennai', 'coimbatore', 'madurai', 'trichy', 'salem', 'tenkasi', 'tirunelveli', 'erode', 'vellore'].includes((j.city || '').toLowerCase())
   ).length;
+  const cloudDevOpsCount = availableIndiaJobs.filter(j => {
+    const title = (j.title || j.jobTitle || '').toLowerCase();
+    const cat = (j.jobCategory || '').toLowerCase();
+    const skills = (j.requiredSkills || []).map(s => s.toLowerCase());
+    return (
+      j.isCloudDevOps ||
+      cat.includes('cloud') ||
+      cat.includes('devops') ||
+      cat.includes('sre') ||
+      title.includes('cloud') ||
+      title.includes('devops') ||
+      title.includes('sre') ||
+      title.includes('platform') ||
+      title.includes('aws') ||
+      title.includes('azure') ||
+      title.includes('gcp') ||
+      title.includes('kubernetes') ||
+      title.includes('docker') ||
+      title.includes('linux') ||
+      skills.some(s => ['aws', 'azure', 'gcp', 'devops', 'docker', 'kubernetes', 'terraform', 'linux', 'ci/cd'].includes(s))
+    );
+  }).length;
   const savedCount = savedJobIds.size;
 
   if (loading) {
@@ -535,6 +582,13 @@ export default function Dashboard() {
           >
             Madurai
           </button>
+          <Link
+            to="/companies"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-emerald-950 hover:bg-emerald-50 transition flex items-center gap-1.5 shadow-sm"
+          >
+            <Building2 className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Monitored Companies (7,525+ Directory)</span>
+          </Link>
         </div>
       </div>
 
@@ -605,6 +659,19 @@ export default function Dashboard() {
               }`}
             >
               🌴 Tamil Nadu (7,500+ Cos)
+            </button>
+
+            {/* Cloud & DevOps Priority Filter Toggle */}
+            <button
+              onClick={() => setCloudDevOpsOnly(!cloudDevOpsOnly)}
+              className={`px-3 py-2 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                cloudDevOpsOnly
+                  ? 'bg-sky-600 text-white shadow-xs ring-2 ring-sky-300'
+                  : 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100'
+              }`}
+              title="Filter exclusively for Cloud & DevOps, SRE, AWS, and Infrastructure roles"
+            >
+              ☁️ Cloud & DevOps ({cloudDevOpsCount})
             </button>
 
             {/* Company Type (Startups vs MNCs) */}
@@ -723,6 +790,21 @@ export default function Dashboard() {
                 (job.city || '').toLowerCase().includes('trichy') ||
                 (job.city || '').toLowerCase().includes('salem');
 
+              const isCloudRole = job.isCloudDevOps ||
+                (job.jobCategory || '').toLowerCase().includes('cloud') ||
+                (job.jobCategory || '').toLowerCase().includes('devops') ||
+                (job.jobCategory || '').toLowerCase().includes('sre') ||
+                (job.title || '').toLowerCase().includes('cloud') ||
+                (job.title || '').toLowerCase().includes('devops') ||
+                (job.title || '').toLowerCase().includes('sre') ||
+                (job.title || '').toLowerCase().includes('platform') ||
+                (job.title || '').toLowerCase().includes('aws') ||
+                (job.title || '').toLowerCase().includes('azure');
+
+              const isLinkedIn = job.sourceId === 'src_linkedin' ||
+                (job.applicationUrl || '').includes('linkedin.com') ||
+                (job.linkedinPostUrl || '').includes('linkedin.com');
+
               return (
                 <div
                   key={job.id}
@@ -736,6 +818,18 @@ export default function Dashboard() {
                         <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
                           {job.jobCategory || 'Software Engineering'}
                         </span>
+
+                        {isCloudRole && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-300 shadow-xs">
+                            ☁️ Cloud & DevOps
+                          </span>
+                        )}
+
+                        {isLinkedIn && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0A66C2]/10 text-[#0A66C2] border border-[#0A66C2]/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#0A66C2] animate-pulse" /> LinkedIn Live
+                          </span>
+                        )}
 
                         {isTamilNadu && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
