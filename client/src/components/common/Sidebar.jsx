@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Briefcase,
+  Building2,
   Sparkles,
   Globe,
   Database,
@@ -18,6 +19,7 @@ import {
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/jobs', label: 'All Jobs', icon: Briefcase },
+  { path: '/companies', label: 'Monitored Companies', icon: Building2 },
   { path: '/recommendations', label: 'AI Matches', icon: Sparkles },
   { path: '/countries', label: 'Country Explorer', icon: Globe },
   { path: '/sources', label: 'Job Sources', icon: Database },

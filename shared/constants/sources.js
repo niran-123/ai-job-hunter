@@ -1,11 +1,20 @@
 export const SOURCE_TYPES = {
   GREENHOUSE: 'GREENHOUSE',
   LEVER: 'LEVER',
+  LINKEDIN: 'LINKEDIN',
   CAREER_PAGE: 'CAREER_PAGE',
   API: 'API'
 };
 
 export const INITIAL_SOURCES = [
+  {
+    name: 'LinkedIn Live Feeds (TN & India)',
+    type: 'LINKEDIN',
+    baseUrl: 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search',
+    enabled: true,
+    scanFrequencyMinutes: 30,
+    rateLimitPerMinute: 60
+  },
   {
     name: 'Greenhouse API',
     type: 'GREENHOUSE',
@@ -23,11 +32,11 @@ export const INITIAL_SOURCES = [
     rateLimitPerMinute: 60
   },
   {
-    name: 'Official Company Career Feeds',
+    name: 'Official Tamil Nadu & India IT Portals',
     type: 'CAREER_PAGE',
-    baseUrl: 'https://example.com/careers',
+    baseUrl: 'https://careers.zohocorp.com',
     enabled: true,
-    scanFrequencyMinutes: 240,
+    scanFrequencyMinutes: 60,
     rateLimitPerMinute: 30
   }
 ];

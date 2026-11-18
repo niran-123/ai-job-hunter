@@ -1,6 +1,7 @@
 import { INITIAL_COUNTRIES, INITIAL_SOURCES } from '../../../shared/constants/sources.js';
 import { DEFAULT_IT_ROLES } from '../../../shared/constants/roles.js';
 import { tamilNaduCollector } from '../modules/tamilNadu/tamilNaduCollector.js';
+import { VERIFIED_LIVE_LINKEDIN_JOBS } from '../collectors/verifiedLinkedInJobs.js';
 
 class InMemoryStore {
   constructor() {
@@ -1434,7 +1435,7 @@ class InMemoryStore {
     ];
 
     const registryTNJobs = tamilNaduCollector.getRegistryFresherOpportunities();
-    this.jobs = [...sampleJobs, ...registryTNJobs];
+    this.jobs = [...VERIFIED_LIVE_LINKEDIN_JOBS, ...sampleJobs, ...registryTNJobs];
     this.updateCountryJobCounts();
   }
 

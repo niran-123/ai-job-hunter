@@ -9,6 +9,7 @@ import AllJobs from './pages/AllJobs';
 import JobDetails from './pages/JobDetails';
 import Recommendations from './pages/Recommendations';
 import Countries from './pages/Countries';
+import Companies from './pages/Companies';
 import Sources from './pages/Sources';
 import SavedJobs from './pages/SavedJobs';
 import Applications from './pages/Applications';
@@ -34,6 +35,7 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="jobs" element={<AllJobs />} />
               <Route path="jobs/:id" element={<JobDetails />} />
+              <Route path="companies" element={<Companies />} />
               <Route path="recommendations" element={<Recommendations />} />
               <Route path="countries" element={<Countries />} />
               <Route path="sources" element={<Sources />} />

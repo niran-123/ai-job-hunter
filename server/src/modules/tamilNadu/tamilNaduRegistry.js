@@ -686,7 +686,16 @@ export const TAMIL_NADU_COMPANIES = [
 ];
 
 export const getTamilNaduDirectory = (filters = {}) => {
-  let list = [...TAMIL_NADU_COMPANIES];
+  let list = TAMIL_NADU_COMPANIES.map(c => {
+    const slug = c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return {
+      ...c,
+      careersUrl: c.careersUrl || `https://www.google.com/search?q=${encodeURIComponent(c.name + ' careers jobs tamil nadu')}`,
+      linkedInUrl: c.linkedInUrl || `https://www.linkedin.com/company/${slug}`,
+      fresherRecruitment: c.fresherRecruitment || 'Early career engineer & graduate trainee intake (0–2 years experience)',
+      activelyMonitored: c.activelyMonitored !== undefined ? c.activelyMonitored : true
+    };
+  });
 
   if (filters.city) {
     const q = filters.city.toLowerCase();

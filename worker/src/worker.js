@@ -2,6 +2,7 @@ import pino from 'pino';
 import { queueManager, QUEUE_NAMES } from './queues/queueManager.js';
 import { GreenhouseAdapter } from '../../server/src/collectors/greenhouseAdapter.js';
 import { LeverAdapter } from '../../server/src/collectors/leverAdapter.js';
+import { LinkedInAdapter } from '../../server/src/collectors/linkedInAdapter.js';
 import { jobNormalizer } from '../../server/src/modules/normalization/jobNormalizer.js';
 import { eligibilityEngine } from '../../server/src/modules/eligibility/eligibilityEngine.js';
 import { aiService } from '../../server/src/modules/ai/aiService.js';
@@ -107,22 +108,28 @@ export class AutomatedWorker {
   async runDiscoveryPipeline() {
     const greenhouse = new GreenhouseAdapter();
     const lever = new LeverAdapter();
+    const linkedIn = new LinkedInAdapter();
 
     const ghBoards = ['stripe', 'canonical', 'inmobi', 'elastic', 'groww'];
     const leverSites = ['cred', 'zeta', 'meesho', 'paytm'];
 
-    const [ghResults, leverResults, tnResults] = await Promise.all([
+    const [ghResults, leverResults, tnResults, linkedInResults] = await Promise.all([
       Promise.all(ghBoards.map(boardToken => greenhouse.fetchJobs({ boardToken }))),
       Promise.all(leverSites.map(site => lever.fetchJobs({ site }))),
-      tamilNaduCollector.scanTamilNaduOpportunities().catch(() => [])
+      tamilNaduCollector.scanTamilNaduOpportunities().catch(() => []),
+      linkedIn.fetchLiveLinkedInJobs().catch(() => [])
     ]);
 
-    const rawList = [...ghResults.flat(), ...leverResults.flat(), ...tnResults.flat()];
+    const rawList = [...ghResults.flat(), ...leverResults.flat(), ...tnResults.flat(), ...linkedInResults];
 
     let newCount = 0;
     for (const raw of rawList) {
       try {
-        const normalized = jobNormalizer.normalize(raw, raw.sourceType === 'GREENHOUSE' ? 'src_1' : 'src_2');
+        const sourceId = raw.sourceType === 'GREENHOUSE' ? 'src_1' : raw.sourceType === 'LEVER' ? 'src_2' : raw.sourceId || 'src_linkedin';
+        const normalized = raw.eligibilityStatus && (raw.title || raw.jobTitle) && raw.applicationUrl
+          ? { ...raw, jobTitle: raw.jobTitle || raw.title, title: raw.title || raw.jobTitle }
+          : jobNormalizer.normalize(raw, sourceId);
+
         const dup = duplicateDetector.findDuplicate(normalized, store.jobs);
         if (dup.isDuplicate) {
           duplicateDetector.recordDuplicate(normalized, dup.matchedJob, dup.reason, dup.confidence, store);

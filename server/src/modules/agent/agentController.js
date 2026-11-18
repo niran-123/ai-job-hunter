@@ -1,6 +1,7 @@
 import { store } from '../../services/store.js';
 import { GreenhouseAdapter } from '../../collectors/greenhouseAdapter.js';
 import { LeverAdapter } from '../../collectors/leverAdapter.js';
+import { LinkedInAdapter } from '../../collectors/linkedInAdapter.js';
 import { jobNormalizer } from '../normalization/jobNormalizer.js';
 import { eligibilityEngine } from '../eligibility/eligibilityEngine.js';
 import { profileMatcher } from '../matching/profileMatcher.js';
@@ -66,19 +67,23 @@ export const agentController = {
         // Execute live fetch for configured sources with resilient fallback
         const greenhouse = new GreenhouseAdapter();
         const lever = new LeverAdapter();
+        const linkedIn = new LinkedInAdapter();
         const ghBoards = ['stripe', 'canonical', 'inmobi', 'elastic', 'groww'];
         const leverSites = ['cred', 'zeta', 'meesho', 'paytm'];
 
-        const [ghResults, leverResults, tnResults] = await Promise.all([
+        const [ghResults, leverResults, tnResults, linkedInResults] = await Promise.all([
           Promise.all(ghBoards.map(boardToken => greenhouse.fetchJobs({ boardToken }))),
           Promise.all(leverSites.map(site => lever.fetchJobs({ site }))),
-          tamilNaduCollector.scanTamilNaduOpportunities().catch(() => [])
+          tamilNaduCollector.scanTamilNaduOpportunities().catch(() => []),
+          linkedIn.fetchLiveLinkedInJobs().catch(() => [])
         ]);
-        const allCandidates = [...ghResults.flat(), ...leverResults.flat(), ...tnResults.flat()];
+        const allCandidates = [...ghResults.flat(), ...leverResults.flat(), ...tnResults.flat(), ...linkedInResults];
         
         for (const candidate of allCandidates) {
-          const sourceId = candidate.sourceType === 'GREENHOUSE' ? 'src_1' : 'src_2';
-          const normalized = jobNormalizer.normalize(candidate, sourceId);
+          const sourceId = candidate.sourceType === 'GREENHOUSE' ? 'src_1' : candidate.sourceType === 'LEVER' ? 'src_2' : candidate.sourceId || 'src_linkedin';
+          const normalized = candidate.eligibilityStatus && (candidate.title || candidate.jobTitle) && candidate.applicationUrl
+            ? { ...candidate, jobTitle: candidate.jobTitle || candidate.title, title: candidate.title || candidate.jobTitle }
+            : jobNormalizer.normalize(candidate, sourceId);
           const dupCheck = duplicateDetector.findDuplicate(normalized, store.jobs);
           if (dupCheck.isDuplicate) {
             duplicateDetector.recordDuplicate(normalized, dupCheck.matchedJob, dupCheck.reason, dupCheck.confidence, store);
